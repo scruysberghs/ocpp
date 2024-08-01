@@ -13,7 +13,15 @@ from homeassistant.components.button import (
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 
 from .api import CentralSystem
-from .const import CONF_CPID, DEFAULT_CPID, DOMAIN
+from .const import (
+    CONF_CPID,
+    DEFAULT_CPID,
+    CONF_CONN_PREFIX,
+    DEFAULT_CONN_PREFIX,
+    CONF_NO_OF_CONNECTORS,
+    DEFAULT_NO_OF_CONNECTORS,
+    DOMAIN,
+)
 from .enums import HAChargerServices
 
 
@@ -47,11 +55,25 @@ async def async_setup_entry(hass, entry, async_add_devices):
 
     central_system = hass.data[DOMAIN][entry.entry_id]
     cp_id = entry.data.get(CONF_CPID, DEFAULT_CPID)
+    conn_prefix = entry.data.get(CONF_CONN_PREFIX, DEFAULT_CONN_PREFIX)
+    number_of_connectors = entry.data.get(
+        CONF_NO_OF_CONNECTORS, DEFAULT_NO_OF_CONNECTORS
+    )
 
     entities = []
 
     for ent in BUTTONS:
-        entities.append(ChargePointButton(central_system, cp_id, ent))
+        if ent.key == "unlock":
+            for conn_no in range(1, number_of_connectors + 1):
+                entities.append(
+                    ChargePointButton(
+                        central_system,
+                        f"{conn_prefix}_{conn_no}",
+                        ent,
+                    )
+                )
+        else:
+            entities.append(ChargePointButton(central_system, cp_id, ent))
 
     async_add_devices(entities, False)
 

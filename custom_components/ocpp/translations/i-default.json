@@ -12,6 +12,8 @@
                     "ssl_keyfile_path": "Path to SSL key or (None)",
                     "csid": "Central system identity",
                     "cpid": "Charge point identity",
+                    "no_of_connectors": "Number of connectors",
+                    "conn_prefix": "Connector name prefix",
                     "max_current": "Maximum charging current",
                     "meter_interval": "Charging sample interval (seconds)",
                     "idle_interval": "Charger idle sampling interval (seconds)",

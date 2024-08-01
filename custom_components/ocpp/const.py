@@ -10,6 +10,7 @@ from ocpp.v16.enums import Measurand, UnitOfMeasure
 CONF_AUTH_LIST = "authorization_list"
 CONF_AUTH_STATUS = "authorization_status"
 CONF_CPI = "charge_point_identity"
+CONF_CONN_PREFIX = "connector_prefix"
 CONF_CPID = "cpid"
 CONF_CSID = "csid"
 CONF_DEFAULT_AUTH_STATUS = "default_authorization_status"
@@ -22,6 +23,7 @@ CONF_METER_INTERVAL = "meter_interval"
 CONF_MODE = ha.CONF_MODE
 CONF_MONITORED_VARIABLES = ha.CONF_MONITORED_VARIABLES
 CONF_NAME = ha.CONF_NAME
+CONF_NO_OF_CONNECTORS = "no_of_connectors"
 CONF_PASSWORD = ha.CONF_PASSWORD
 CONF_PORT = ha.CONF_PORT
 CONF_SKIP_SCHEMA_VALIDATION = "skip_schema_validation"
@@ -38,10 +40,12 @@ CONF_WEBSOCKET_PING_TRIES = "websocket_ping_tries"
 CONF_WEBSOCKET_PING_INTERVAL = "websocket_ping_interval"
 CONF_WEBSOCKET_PING_TIMEOUT = "websocket_ping_timeout"
 DATA_UPDATED = "ocpp_data_updated"
+DEFAULT_CONN_PREFIX = "connector"
 DEFAULT_CSID = "central"
 DEFAULT_CPID = "charger"
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_MAX_CURRENT = 32
+DEFAULT_NO_OF_CONNECTORS = 1
 DEFAULT_PORT = 9000
 DEFAULT_SKIP_SCHEMA_VALIDATION = False
 DEFAULT_FORCE_SMART_CHARGING = False
@@ -99,6 +103,16 @@ DEFAULT_ENERGY_UNIT = UnitOfMeasure.wh.value
 DEFAULT_POWER_UNIT = UnitOfMeasure.w.value
 HA_ENERGY_UNIT = UnitOfMeasure.kwh.value
 HA_POWER_UNIT = UnitOfMeasure.kw.value
+
+# The measurands that belong to a specific connector
+CONNECTOR_SENSORS = [
+    Measurand.energy_active_import_register.value,
+    Measurand.energy_active_import_interval.value,
+    Measurand.power_active_import.value,
+    Measurand.current_import.value,
+    Measurand.current_offered.value,
+    Measurand.voltage.value,
+]
 
 # Where a HA unit does not exist use Ocpp unit
 UNITS_OCCP_TO_HA = {

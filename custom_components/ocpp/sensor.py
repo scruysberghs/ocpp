@@ -19,15 +19,29 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 
 from .api import CentralSystem
 from .const import (
+    CONF_CONN_PREFIX,
     CONF_CPID,
+    CONF_NO_OF_CONNECTORS,
     DATA_UPDATED,
-    DEFAULT_CLASS_UNITS_HA,
+    DEFAULT_CONN_PREFIX,
     DEFAULT_CPID,
+    DEFAULT_NO_OF_CONNECTORS,
+    DEFAULT_CLASS_UNITS_HA,
     DOMAIN,
     ICON,
     Measurand,
+    CONNECTOR_SENSORS,
 )
-from .enums import HAChargerDetails, HAChargerSession, HAChargerStatuses
+from .enums import (
+    HAChargerDetails,
+    HAChargerSession,
+    HAChargerStatuses,
+    HAConnectorSession,
+    HAConnectorStatuses,
+)
+import logging
+
+_LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
 @dataclass
@@ -41,6 +55,10 @@ async def async_setup_entry(hass, entry, async_add_devices):
     """Configure the sensor platform."""
     central_system = hass.data[DOMAIN][entry.entry_id]
     cp_id = entry.data.get(CONF_CPID, DEFAULT_CPID)
+    conn_prefix = entry.data.get(CONF_CONN_PREFIX, DEFAULT_CONN_PREFIX)
+    number_of_connectors = entry.data.get(
+        CONF_NO_OF_CONNECTORS, DEFAULT_NO_OF_CONNECTORS
+    )
     entities = []
     SENSORS = []
     for metric in list(
@@ -64,6 +82,21 @@ async def async_setup_entry(hass, entry, async_add_devices):
         )
 
     for ent in SENSORS:
+        if (
+            ent.metric in CONNECTOR_SENSORS
+            or ent.metric in list(HAConnectorSession)
+            or ent.metric in list(HAConnectorStatuses)
+        ):
+            for conn_no in range(1, number_of_connectors + 1):
+                entities.append(
+                    ChargePointMetric(
+                        hass,
+                        central_system,
+                        f"{conn_prefix}_{conn_no}",
+                        ent,
+                    )
+                )
+
         entities.append(
             ChargePointMetric(
                 hass,

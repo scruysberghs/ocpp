@@ -17,11 +17,15 @@ from homeassistant.helpers.entity import DeviceInfo
 
 from .api import CentralSystem
 from .const import (
+    CONF_CONN_PREFIX,
     CONF_CPID,
     CONF_MAX_CURRENT,
+    CONF_NO_OF_CONNECTORS,
     DATA_UPDATED,
+    DEFAULT_CONN_PREFIX,
     DEFAULT_CPID,
     DEFAULT_MAX_CURRENT,
+    DEFAULT_NO_OF_CONNECTORS,
     DOMAIN,
     ICON,
 )
@@ -56,14 +60,28 @@ async def async_setup_entry(hass, entry, async_add_devices):
 
     central_system = hass.data[DOMAIN][entry.entry_id]
     cp_id = entry.data.get(CONF_CPID, DEFAULT_CPID)
+    conn_prefix = entry.data.get(CONF_CONN_PREFIX, DEFAULT_CONN_PREFIX)
+    number_of_connectors = entry.data.get(
+        CONF_NO_OF_CONNECTORS, DEFAULT_NO_OF_CONNECTORS
+    )
+    max_current = entry.data.get(CONF_MAX_CURRENT, DEFAULT_MAX_CURRENT)
 
     entities = []
 
     for ent in NUMBERS:
-        if ent.key == "maximum_current":
-            ent.initial_value = entry.data.get(CONF_MAX_CURRENT, DEFAULT_MAX_CURRENT)
-            ent.native_max_value = entry.data.get(CONF_MAX_CURRENT, DEFAULT_MAX_CURRENT)
-        entities.append(OcppNumber(hass, central_system, cp_id, ent))
+        for conn_no in range(1, number_of_connectors + 1):
+            if ent.key == "maximum_current":
+                ent.initial_value = max_current
+                ent.native_max_value = max_current
+            entities.append(
+                OcppNumber(
+                    hass,
+                    central_system,
+                    cp_id,
+                    f"{conn_prefix}_{conn_no}",
+                    ent,
+                )
+            )
 
     async_add_devices(entities, False)
 
@@ -79,19 +97,27 @@ class OcppNumber(RestoreNumber, NumberEntity):
         hass: HomeAssistant,
         central_system: CentralSystem,
         cp_id: str,
+        connector_id: str,
         description: OcppNumberDescription,
     ):
         """Initialize a Number instance."""
         self.cp_id = cp_id
+        self.connector_id = connector_id
         self._hass = hass
         self.central_system = central_system
         self.entity_description = description
         self._attr_unique_id = ".".join(
-            [NUMBER_DOMAIN, self.cp_id, self.entity_description.key]
+            [NUMBER_DOMAIN, self.connector_id, self.entity_description.key]
+        )
+        self._attr_name = ".".join([self.connector_id, self.entity_description.name])
+        self.entity_id = (
+            NUMBER_DOMAIN
+            + "."
+            + "_".join([self.connector_id, self.entity_description.key])
         )
         self._attr_name = self.entity_description.name
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.cp_id)},
+            identifiers={(DOMAIN, self.connector_id)},
             via_device=(DOMAIN, self.central_system.id),
         )
         self._attr_native_value = self.entity_description.initial_value
@@ -127,7 +153,7 @@ class OcppNumber(RestoreNumber, NumberEntity):
             self.cp_id
         ) and Profiles.SMART & self.central_system.get_supported_features(self.cp_id):
             resp = await self.central_system.set_max_charge_rate_amps(
-                self.cp_id, num_value
+                self.connector_id, num_value
             )
             if resp is True:
                 self._attr_native_value = num_value

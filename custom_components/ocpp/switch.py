@@ -15,8 +15,18 @@ from homeassistant.helpers.entity import DeviceInfo
 from ocpp.v16.enums import ChargePointStatus
 
 from .api import CentralSystem
-from .const import CONF_CPID, DEFAULT_CPID, DOMAIN, ICON
+from .const import (
+    CONF_CONN_PREFIX,
+    CONF_NO_OF_CONNECTORS,
+    DEFAULT_CONN_PREFIX,
+    DEFAULT_NO_OF_CONNECTORS,
+    DOMAIN,
+    ICON,
+)
 from .enums import HAChargerServices, HAChargerStatuses
+import logging
+
+_LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
 # Switch configuration definitions
@@ -65,12 +75,22 @@ SWITCHES: Final = [
 async def async_setup_entry(hass, entry, async_add_devices):
     """Configure the sensor platform."""
     central_system = hass.data[DOMAIN][entry.entry_id]
-    cp_id = entry.data.get(CONF_CPID, DEFAULT_CPID)
+    conn_prefix = entry.data.get(CONF_CONN_PREFIX, DEFAULT_CONN_PREFIX)
+    number_of_connectors = entry.data.get(
+        CONF_NO_OF_CONNECTORS, DEFAULT_NO_OF_CONNECTORS
+    )
 
     entities = []
 
     for ent in SWITCHES:
-        entities.append(ChargePointSwitch(central_system, cp_id, ent))
+        for conn_no in range(1, number_of_connectors + 1):
+            entities.append(
+                ChargePointSwitch(
+                    central_system,
+                    f"{conn_prefix}_{conn_no}",
+                    ent,
+                )
+            )
 
     async_add_devices(entities, False)
 
@@ -113,6 +133,13 @@ class ChargePointSwitch(SwitchEntity):
         if self.entity_description.metric_state is not None:
             resp = self.central_system.get_metric(
                 self.cp_id, self.entity_description.metric_state
+            )
+            _LOGGER.info(
+                "is on for %s states resp: %s should be in %s , is %s mesurand",
+                self.cp_id,
+                resp,
+                self.entity_description.metric_condition,
+                self.entity_description.metric_state,
             )
             if resp in self.entity_description.metric_condition:
                 self._state = True
