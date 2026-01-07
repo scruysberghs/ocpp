@@ -1,4 +1,4 @@
-colorlog==6.8.2
+colorlog==6.10.1
 pip>=21.0,<24.1
 ruff==0.5.1
 ocpp==1.0.0
